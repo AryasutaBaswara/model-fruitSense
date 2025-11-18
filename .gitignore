@@ -1,0 +1,12 @@
+# .gitignore untuk Python
+
+# Abaikan virtual environment (WAJIB)
+venv/
+env/
+
+# Abaikan cache python
+__pycache__/
+*.py[cod]
+
+# Abaikan file environment variable
+.env
