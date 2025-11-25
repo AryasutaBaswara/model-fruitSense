@@ -127,6 +127,8 @@ def analyze_image():
     
 # --- 6. Jalankan Server ---
 if __name__ == '__main__':
-    print("🚀 Server ML Python berjalan di http://localhost:5001")
-    # debug=True berguna untuk melihat error detail saat development
-    app.run(port=5001, debug=True)
+    # Ambil PORT dari Railway, kalau tidak ada baru pakai 5001
+    port = int(os.environ.get("PORT", 5001))
+    print(f"🚀 Server ML berjalan di port {port}")
+    # host='0.0.0.0' WAJIB agar bisa diakses dari luar container
+    app.run(host='0.0.0.0', port=port, debug=False)
