@@ -101,11 +101,11 @@ def analyze_image():
         interpreter_identifier.invoke()
         
         id_output_data = interpreter_identifier.get_tensor(id_output_details[0]['index'])
-        id_confidence = np.max(id_output_data[0])
+        id_confidence = float(np.max(id_output_data[0]))
 
         id_class_id = np.argmax(id_output_data[0]) # Ambil index dengan probabilitas tertinggi
         # 🛑 LOGIC FILTER: Kalau yakinnya kurang dari 60%, tolak!
-        if id_confidence < 0.3:
+        if id_confidence < 0.45:
             predicted_fruit_name = "Unknown"
             print(f"⚠️ Objek tidak dikenali. Confidence: {id_confidence:.2f}")
         else:
@@ -123,11 +123,12 @@ def analyze_image():
             grade_class_id = np.argmax(grade_output_data[0])
             predicted_grade_label = GRADING_LABELS[grade_class_id]
         # --- Return Hasil JSON ---
-        print(f"Prediksi: {predicted_fruit_name} | {predicted_grade_label}")
+        print(f"Prediksi: {predicted_fruit_name} | {predicted_grade_label} | {id_confidence}")
         
         return jsonify({
             'predicted_fruit_name': predicted_fruit_name,
-            'predicted_grade_label': predicted_grade_label
+            'predicted_grade_label': predicted_grade_label,
+            'confidence': id_confidence
         })
 
     except Exception as e:
