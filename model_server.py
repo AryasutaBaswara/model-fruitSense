@@ -105,7 +105,7 @@ def analyze_image():
 
         id_class_id = np.argmax(id_output_data[0]) # Ambil index dengan probabilitas tertinggi
         # 🛑 LOGIC FILTER: Kalau yakinnya kurang dari 60%, tolak!
-        if id_confidence < 0.6:
+        if id_confidence < 0.3:
             predicted_fruit_name = "Unknown"
             print(f"⚠️ Objek tidak dikenali. Confidence: {id_confidence:.2f}")
         else:
