@@ -101,18 +101,27 @@ def analyze_image():
         interpreter_identifier.invoke()
         
         id_output_data = interpreter_identifier.get_tensor(id_output_details[0]['index'])
+        id_confidence = np.max(id_output_data[0])
+
         id_class_id = np.argmax(id_output_data[0]) # Ambil index dengan probabilitas tertinggi
-        predicted_fruit_name = IDENTIFIER_LABELS[id_class_id]
-        
+        # 🛑 LOGIC FILTER: Kalau yakinnya kurang dari 60%, tolak!
+        if id_confidence < 0.6:
+            predicted_fruit_name = "Unknown"
+            print(f"⚠️ Objek tidak dikenali. Confidence: {id_confidence:.2f}")
+        else:
+            predicted_fruit_name = IDENTIFIER_LABELS[id_class_id]
+            print(f"✅ Terdeteksi: {predicted_fruit_name} ({id_confidence:.2f})")
         
         # --- JALANKAN MODEL 2: GRADING ---
-        interpreter_grading.set_tensor(grade_input_details[0]['index'], processed_image)
-        interpreter_grading.invoke()
-        
-        grade_output_data = interpreter_grading.get_tensor(grade_output_details[0]['index'])
-        grade_class_id = np.argmax(grade_output_data[0]) # Ambil index dengan probabilitas tertinggi
-        predicted_grade_label = GRADING_LABELS[grade_class_id]
-
+        if predicted_fruit_name == "Unknown":
+            predicted_grade_label = "Unknown"
+        else:
+            interpreter_grading.set_tensor(grade_input_details[0]['index'], processed_image)
+            interpreter_grading.invoke()
+            
+            grade_output_data = interpreter_grading.get_tensor(grade_output_details[0]['index'])
+            grade_class_id = np.argmax(grade_output_data[0])
+            predicted_grade_label = GRADING_LABELS[grade_class_id]
         # --- Return Hasil JSON ---
         print(f"Prediksi: {predicted_fruit_name} | {predicted_grade_label}")
         
