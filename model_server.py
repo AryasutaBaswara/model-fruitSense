@@ -8,7 +8,7 @@ from PIL import Image
 # --- 1. Konfigurasi Nama File (Sesuai Screenshot Anda) ---
 # File berada satu folder dengan script ini, jadi tidak perlu path folder
 IDENTIFIER_MODEL_PATH = 'identifier_model_fruitsense.tflite'
-GRADING_MODEL_PATH = 'grading_model_fruitsense.tflite'
+GRADING_MODEL_PATH = 'grading_model_fruitsense_v2.tflite'
 
 IMAGE_SIZE = 224 # Ukuran input standar MobileNetV2
 
@@ -52,13 +52,50 @@ IDENTIFIER_LABELS = [
 # Lalu copy key-nya ke sini secara berurutan.
 GRADING_LABELS = [
     # CONTOH (GANTI DENGAN MILIK ANDA):
-    'apple_green_a', 'apple_green_b', 'apple_green_rotten',
-    'apple_red_a', 'apple_red_b','apple_red_c','apple_red_rotten',
-    'banana_a', 'banana_b', 'banana_c', 'banana_rotten', 'durian_grade_a', 'durian_grade_b', 'durian_grade_c',
-    'durian_rotten', 'grape_green_a', 'grape_green_b', 'grape_purple_a', 'grape_purple_b' 'grape_rotten', 'guava_grade_a', 'guava_grade_b', 'guava_rotten',
-    'jackfruit_a', 'jackfruit_b', 'jackfruit_c', 'jackfruit_rotten', 'mango_grade_a', 'mango_grade_b', 'mango_grade_c', 'mango_rotten', 'orange_grade_a', 'orange_grade_b', 'orange_rotten',
-    'papaya_grade_a', 'papaya_grade_b', 'papaya_grade_c', 'papaya_rotten', 'pineapple_grade_a', 'pineapple_grade_b', 'pineapple_rotten',
-    'watermelon_grade_a', 'watermelon_grade_b', 'watermelon_rotten'
+    'apple_green_a',
+    'apple_green_b',
+    'apple_green_rotten',
+    'apple_red_a',
+    'apple_red_b',
+    'apple_red_c',
+    'apple_red_rotten',
+    'banana_a',
+    'banana_b',
+    'banana_c',
+    'banana_rotten',
+    'durian_grade_a',
+    'durian_grade_b',
+    'durian_grade_c',
+    'durian_rotten',
+    'grape_green_a',
+    'grape_green_b',
+    'grape_purple_a',
+    'grape_purple_b',
+    'grape_rotten',
+    'guava_grade_a',
+    'guava_grade_b',
+    'guava_rotten',
+    'jackfruit_a',
+    'jackfruit_b',
+    'jackfruit_c',
+    'jackfruit_rotten',
+    'mango_grade_a',
+    'mango_grade_b',
+    'mango_grade_c',
+    'mango_rotten',
+    'orange_grade_a',
+    'orange_grade_b',
+    'orange_rotten',
+    'papaya_grade_a',
+    'papaya_grade_b',
+    'papaya_grade_c',
+    'papaya_rotten',
+    'pineapple_grade_a',
+    'pineapple_grade_b',
+    'pineapple_rotten',
+    'watermelon_grade_a',
+    'watermelon_grade_b',
+    'watermelon_rotten',
 ]
 
 # --- 4. Fungsi Preprocessing Gambar ---
@@ -66,6 +103,7 @@ def preprocess_image(image_bytes):
     # Buka gambar dari bytes dan convert ke RGB (hilangkan alpha channel jika png)
     image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
     
+    print(f"📏 Ukuran Asli Gambar: {image.size}")
     # Resize gambar ke ukuran yang diharapkan model (224x224)
     image = image.resize((IMAGE_SIZE, IMAGE_SIZE))
     
@@ -73,7 +111,7 @@ def preprocess_image(image_bytes):
     image_array = np.array(image, dtype=np.float32)
     
     # Normalisasi nilai pixel ke range 0-1 (karena kita pakai rescale=1./255 di Colab)
-    image_array = image_array / 255.0
+    image_array = (image_array / 127.5) - 1.0
     
     # Tambahkan dimensi batch (Menjadi: 1, 224, 224, 3)
     image_array = np.expand_dims(image_array, axis=0)
@@ -101,11 +139,17 @@ def analyze_image():
         interpreter_identifier.invoke()
         
         id_output_data = interpreter_identifier.get_tensor(id_output_details[0]['index'])
+
+        print("\n--- SKOR IDENTIFIKASI ---")
+        for i, score in enumerate(id_output_data[0]):
+            print(f"{IDENTIFIER_LABELS[i]}: {score:.4f}")
+        print("-------------------------\n")      
+
         id_confidence = float(np.max(id_output_data[0]))
 
         id_class_id = np.argmax(id_output_data[0]) # Ambil index dengan probabilitas tertinggi
         # 🛑 LOGIC FILTER: Kalau yakinnya kurang dari 60%, tolak!
-        if id_confidence < 0.45:
+        if id_confidence < 0.6:
             predicted_fruit_name = "Unknown"
             print(f"⚠️ Objek tidak dikenali. Confidence: {id_confidence:.2f}")
         else:
